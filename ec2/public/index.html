@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="TaskFlow - A clean, fast, and simple task manager application ready for AWS EC2 deployment.">
+  <title>TaskFlow – Simple Task Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%234f46e5%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polygon points=%2213 2 3 14 12 14 11 22 21 10 12 10 13 2%22/></svg>">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-brand">
+       
+        <div class="header-titles">
+          <h1 id="app-title">TaskFlow</h1>
+          <p class="tagline">Simple Task Manager</p>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div class="server-badge" id="server-status-badge" title="Server Health Status">
+          <span class="status-dot"></span>
+          <span id="server-status-text">Checking server...</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="stats-grid" aria-label="Task statistics">
+      <div class="stat-card">
+        <div class="stat-icon total-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+            <path d="M9 12h6"></path>
+            <path d="M9 16h6"></path>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total Tasks</span>
+          <span class="stat-value" id="stat-total">0</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon pending-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Pending</span>
+          <span class="stat-value" id="stat-pending">0</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon completed-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Completed</span>
+          <span class="stat-value" id="stat-completed">0</span>
+        </div>
+      </div>
+
+      <div class="stat-card progress-card">
+        <div class="progress-header">
+          <span class="stat-label">Completion Rate</span>
+          <span class="stat-value-percent" id="stat-percent">0%</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Add Task Card -->
+    <section class="card input-card">
+      <form id="add-task-form" class="task-form" autocomplete="off">
+        <div class="input-wrapper">
+          <input
+            type="text"
+            id="task-input"
+            class="task-input"
+            placeholder="What needs to be done? (e.g. Deploy to EC2)"
+            maxlength="200"
+            required
+            aria-label="New task title"
+          />
+        </div>
+        <button type="submit" id="add-task-btn" class="btn btn-primary">
+          <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Add Task</span>
+        </button>
+      </form>
+      <div id="form-error" class="form-error" role="alert" style="display: none;"></div>
+    </section>
+
+    <!-- Task List Controls & Filters -->
+    <section class="task-list-section">
+      <div class="list-controls">
+        <div class="filter-tabs" role="tablist">
+          <button class="filter-tab active" data-filter="all" role="tab" id="filter-all" aria-selected="true">
+            All (<span id="count-all">0</span>)
+          </button>
+          <button class="filter-tab" data-filter="pending" role="tab" id="filter-pending" aria-selected="false">
+            Pending (<span id="count-pending">0</span>)
+          </button>
+          <button class="filter-tab" data-filter="completed" role="tab" id="filter-completed" aria-selected="false">
+            Completed (<span id="count-completed">0</span>)
+          </button>
+        </div>
+        <button id="refresh-btn" class="btn-icon-ghost" title="Refresh task list" aria-label="Refresh tasks">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Task Items Container -->
+      <div id="task-list-container" class="task-list-container">
+        <!-- Rendered by script.js -->
+        <div class="loading-state" id="loading-state">
+          <div class="spinner"></div>
+          <p>Loading your tasks...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>TaskFlow &bull; Node.js + Express + Vanilla JS &bull; AWS EC2 Deployment Ready</p>
+    </footer>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
